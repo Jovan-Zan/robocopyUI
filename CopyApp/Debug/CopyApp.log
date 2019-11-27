@@ -1,0 +1,4 @@
+﻿  pch.cpp
+  CopyApp.cpp
+c:\users\toshiba\desktop\operativni sistemi (os)\robocopyui\copyapp\copyapp.cpp(17): warning C4101: 'dwh': unreferenced local variable
+  CopyApp.vcxproj -> C:\Users\toshiba\Desktop\Operativni sistemi (OS)\robocopyUI\Debug\CopyApp.exe
