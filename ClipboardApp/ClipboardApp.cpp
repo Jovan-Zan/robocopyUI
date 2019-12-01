@@ -16,18 +16,20 @@ int wmain(int argc, wchar_t** argv) {
 	}
 
 	// Create or open mutex.
-	wcout << L"Opening mutex in ClipboardApp..." << endl;
-	HANDLE hCPAMutex = OpenMutex(SYNCHRONIZE, FALSE, MUTEXNAME);
+	wcout << L"Opening mutex..." << endl;
+	HANDLE hCPAMutex = CreateMutex(NULL, FALSE, MUTEXNAME);
 	if (hCPAMutex == NULL) {
-		cerr << "Error: Failed to open clipboardapp mutex." << endl;
+		cerr << "Error: Failed to create or open clipboardapp mutex." << endl;
 		Sleep(3000);
 		return EXIT_FAILURE;
 	}
 
+	// If mutex is already acquired that means an instance of
+	// ClipboardApp.exe is already running.
 	DWORD dwTryAcquireMutex = WaitForSingleObject(hCPAMutex, 0);
 	if (dwTryAcquireMutex != WAIT_OBJECT_0) {
-		cerr << "Couldn't acquire mutex in ClipboardApp." << endl;
-		return EXIT_FAILURE;
+		wcout << L"An instance of ClipboardApp is already running." << endl;
+		return 0;
 	}
 
 

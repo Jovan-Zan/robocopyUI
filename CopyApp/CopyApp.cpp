@@ -33,8 +33,6 @@ int wmain(int argc, wchar_t **argv) {
 	wcout << endl;
 
 
-	HANDLE hMapFile;
-	LPWSTR pBuf;
 	wstring rootDirPath;
 	vector<wstring> itemPaths;
 
@@ -57,7 +55,40 @@ int wmain(int argc, wchar_t **argv) {
 	wcout << L"Contents = " << endl << contents << endl << endl;;
 
 
+
+	// Start clipboard app.
+	// Define ClipboardApp.exe startup and process info as default.
+	STARTUPINFO siCPA;
+	PROCESS_INFORMATION piCPA;
+	ZeroMemory(&siCPA, sizeof(siCPA));
+	siCPA.cb = sizeof(siCPA);
+	ZeroMemory(&piCPA, sizeof(piCPA));
+
+	// Start ClipboardApp.exe
+	wcout << L"Starting ClipboardApp.exe ..." << endl;
+	if (!CreateProcess(
+		L"ClipboardApp.exe", // Program name.
+		NULL, // Command line arguments (in this case uses L"ClipboardApp.exe")
+		NULL,              // Process handle not inheritable
+		NULL,              // Thread handle not inheritable
+		FALSE,             // Set handle inheritance to FALSE
+		CREATE_NEW_CONSOLE, //CREATE_NO_WINDOW,  // Creation flags.
+		NULL,              // Use parent's environment block
+		NULL,              // Use parent's starting directory 
+		&siCPA,            // Pointer to STARTUPINFO structure
+		&piCPA)) {          // Pointer to PROCESS_INFORMATION structure
+		cerr << "Error: Couldn't create ClipboardApp process." << endl;
+		return EXIT_FAILURE;
+	}
+	
+
+
+
+
 	// Populate memory mapped file.
+	HANDLE hMapFile;
+	LPWSTR pBuf;
+
 	wcout << L"Creating memory file mapping..." << endl;
 	hMapFile = CreateFileMapping(
 		INVALID_HANDLE_VALUE,
@@ -91,60 +122,10 @@ int wmain(int argc, wchar_t **argv) {
 
 
 
-	// Start clipboard app.
-
-	// Create or open mutex.
-	wcout << L"Opening mutex..." << endl;
-	HANDLE hCPAMutex = CreateMutex(NULL, FALSE, MUTEXNAME);
-	if (hCPAMutex == NULL) {
-		cerr << "Error: Failed to create or open clipboardapp mutex." << endl;
-		Sleep(3000);
-		return EXIT_FAILURE;
-	}
-
-	// If mutex is already acquired that means an instance of
-	// ClipboardApp.exe is already running.
-	DWORD dwWaitRes = WaitForSingleObject(hCPAMutex, 0);
-
-	// Mutex is signaled and we have ownership of mutex.
-	if (dwWaitRes == WAIT_OBJECT_0) {
-		wcout << L"Mutex IS signaled." << endl;
-
-		// Define ClipboardApp.exe startup and process info as default.
-		STARTUPINFO siCPA;
-		PROCESS_INFORMATION piCPA;
-		ZeroMemory(&siCPA, sizeof(siCPA));
-		siCPA.cb = sizeof(siCPA);
-		ZeroMemory(&piCPA, sizeof(piCPA));
-
-		// Start ClipboardApp.exe
-		wcout << L"Starting ClipboardApp.exe ..." << endl;
-		ReleaseMutex(hCPAMutex);
-		if (!CreateProcess(
-			L"ClipboardApp.exe", // Program name.
-			NULL, // Command line arguments (in this case uses L"ClipboardApp.exe")
-			NULL,              // Process handle not inheritable
-			NULL,              // Thread handle not inheritable
-			FALSE,             // Set handle inheritance to FALSE
-			CREATE_NEW_CONSOLE, //CREATE_NO_WINDOW,  // Creation flags.
-			NULL,              // Use parent's environment block
-			NULL,              // Use parent's starting directory 
-			&siCPA,            // Pointer to STARTUPINFO structure
-			&piCPA)) {          // Pointer to PROCESS_INFORMATION structure
-			cerr << "Error: Couldn't create ClipboardApp process." << endl;
-			return EXIT_FAILURE;
-		}
-	}
-	else {
-		wcout << L"Mutex IS NOT signaled. An instance of ClipboardApp is already running." << endl;
-	}
-
-
 	wcout << L"THE END" << endl;
 	Sleep(60000);
 
 	UnmapViewOfFile(pBuf);
 	CloseHandle(hMapFile);
-	CloseHandle(hCPAMutex);
  	return 0;
 }
