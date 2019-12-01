@@ -33,23 +33,26 @@ int wmain(int argc, wchar_t **argv) {
 	wcout << endl;
 
 
-	wstring rootDirPath;
-	vector<wstring> itemPaths;
+	wstring rootDirPath; // Path of directory containing selected items.
+	vector<wstring> itemNames; //  Filenames of seleceted items.
 
 	rootDirPath = wstring(argv[1]);
 	rootDirPath = rootDirPath.substr(0, rootDirPath.find_last_of(L"\\"));
 	wcout << "Root dir path = " << rootDirPath << endl;
 
 	for (int i = 1; i < argc; i++)
-		itemPaths.push_back(wstring(wcsrchr(argv[i], L'\\') + 1));
+		itemNames.push_back(wstring(wcsrchr(argv[i], L'\\') + 1));
 
 	wcout << "Items: " << endl;
-	for (int i = 0; i < itemPaths.size(); i++)
-		wcout << "itemPaths[" << i << "] = " << itemPaths[i] << endl;
+	for (int i = 0; i < itemNames.size(); i++)
+		wcout << "itemNames[" << i << "] = " << itemNames[i] << endl;
 	
 	wcout << L"Creating contents string..." << endl;
-	wstring contents = rootDirPath + L"\n";
-	for (vector<wstring>::const_iterator it = itemPaths.begin(); it != itemPaths.end(); it++)
+	// First line of contents is the number of selected items
+	// Second line contains path of the directory of selected items
+	int itemCount = argc - 1;
+	wstring contents = to_wstring(itemCount) + L"\n" + rootDirPath + L"\n"; 
+	for (vector<wstring>::const_iterator it = itemNames.begin(); it != itemNames.end(); it++)
 		contents += *it + L"\n";
 
 	wcout << L"Contents = " << endl << contents << endl << endl;;

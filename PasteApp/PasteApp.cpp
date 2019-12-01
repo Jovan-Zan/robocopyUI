@@ -59,13 +59,19 @@ int wmain(int argc, wchar_t** argv) {
 	contents << pBuf;
 	
 	wcout << "Parsing contents of memory mapped file..." << endl;
+	wstring numInFirstLine;
+	getline(contents, numInFirstLine, L'\n');
+	int itemCount = stoi(numInFirstLine);
+	
 	wstring rootDir;
 	getline(contents, rootDir, L'\n');
 	rootDir = rootDir;
 
 	wstring selectedItem, selectedFiles = L"";
 	vector<wstring> selectedDirs;
-	while(getline(contents, selectedItem, L'\n')) {
+	for (int i = 0; i < itemCount; i++) {
+		getline(contents, selectedItem, L'\n');
+
 		wstring selectedItemPath = rootDir + L"\\" + selectedItem;
 		DWORD dwFileAttributes = GetFileAttributes((LPCWSTR) selectedItemPath.c_str());
 		
@@ -85,7 +91,7 @@ int wmain(int argc, wchar_t** argv) {
 	if (!selectedFiles.empty()) {
 
 		// Copy selected files.
-		wcout << L"Copying selected files...";
+		wcout << L"Copying selected files..." << endl;
 		wstring comm = L"robocopy.exe " + qe(rootDir) + L" " + qe(dest) + L" " + selectedFiles + L"\n";
 		_wsystem(comm.c_str());
 		//_wspawnlp(_P_WAIT, L"robocopy.exe", L"robocopy.exe", rootDir.c_str(), dest.c_str(), selectedFiles.c_str());
