@@ -12,6 +12,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{40333C3D-0E50-4AAF-A68C-7A470803CC16}"
 	ProjectSection(SolutionItems) = preProject
 		Shared\constants.h = Shared\constants.h
+		Shared\RegEditModifications.txt = Shared\RegEditModifications.txt
 	EndProjectSection
 EndProject
 Global
