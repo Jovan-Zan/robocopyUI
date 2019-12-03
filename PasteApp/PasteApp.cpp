@@ -27,6 +27,23 @@ int wmain(int argc, wchar_t** argv) {
 		return EXIT_FAILURE;
 	}
 
+	if (argc != 2) {
+		cerr << "Bad number of arguments (should be 2)" << endl;
+		return EXIT_FAILURE;
+	}
+
+
+
+	// Obtain target folder from argv[1] 
+	DWORD dwTargetDirAtt = GetFileAttributes(argv[1]);
+	if (!(dwTargetDirAtt & FILE_ATTRIBUTE_DIRECTORY)) {
+		cerr << "Passed argument is not a valid directory path!" << endl;
+		return EXIT_FAILURE;
+	}
+	// Else...
+	wstring targetDir = wstring(argv[1]);
+	wcout << L"TargetDir = " << targetDir << endl;
+
 
 	// Get the handle to memory mapped file.
 	wcout << L"Openning file mapping..." << endl;
@@ -52,6 +69,9 @@ int wmain(int argc, wchar_t** argv) {
 		cerr << "Error: Couldn't open view for reading." << endl;
 		return EXIT_FAILURE;
 	}
+
+
+	// Obtain contents of memory mapped file.
 
 	wcout << L"Getting contents of memory mapped file..." << endl;
 	wcout << pBuf;
@@ -79,30 +99,25 @@ int wmain(int argc, wchar_t** argv) {
 			selectedDirs.push_back(selectedItem);
 		}
 		else {
-			selectedFiles += qe(selectedItem) + L" ";
+			selectedFiles += qe(selectedItem) + L" "; // QUOTE ENCLOSING!
 		}
 	}
 
 
 
-
-	wstring dest = L"F:\\Test";
-	
+	// Copy selected files.
 	if (!selectedFiles.empty()) {
-
-		// Copy selected files.
 		wcout << L"Copying selected files..." << endl;
-		wstring comm = L"robocopy.exe " + qe(rootDir) + L" " + qe(dest) + L" " + selectedFiles + L"\n";
+		wstring comm = L"robocopy.exe " + qe(rootDir) + L" " + qe(targetDir) + L" " + selectedFiles + L"\n";
 		_wsystem(comm.c_str());
-		//_wspawnlp(_P_WAIT, L"robocopy.exe", L"robocopy.exe", rootDir.c_str(), dest.c_str(), selectedFiles.c_str());
 	}
 
 	// Copy selected directories.
 	wcout << L"Copying selected directories...";
 	for (int i = 0; i < selectedDirs.size(); i++) {
-		wstring sourceDir = qe(rootDir + L"\\" + selectedDirs[i]);
-		wstring targetDir = qe(dest + L"\\" + selectedDirs[i]);
-		wstring command = L"robocopy " + sourceDir + L" " + targetDir + L" /e \n";
+		wstring sourceSubDir = qe(rootDir + L"\\" + selectedDirs[i]);
+		wstring targetSubDir = qe(targetDir + L"\\" + selectedDirs[i]);
+		wstring command = L"robocopy " + sourceSubDir + L" " + targetSubDir + L" /e \n";
 
 		wcout << L"COMMAND = " + command << endl;
 		_wsystem(command.c_str());
