@@ -1,0 +1,29 @@
+This document describes what actions must be taken in order to add "RoboCopy" to "SendTo" menu and "RoboPaste" to "right-click" menu.
+
+NOTE: These will be done automatically during installation.  
+
+1) RoboCopy
+Add shortcut to RoboCopy.exe to SendTo folder, which is at:
+C:\Users\<username>\AppData\Roaming\Microsoft\Windows\SendTo
+and name the shortcut "RoboCopy"
+
+2) RoboPaste
+Add 2 keys to Windows registry:
+
+1) Computer\HKEY_CLASSES_ROOT
+	   Directory
+		   Background
+			   shell
+				   + RoboPaste
+
+2) Computer\HKEY_CLASSES_ROOT
+	   Directory
+		   Background
+			   shell
+				   RoboPaste
+					   + command
+						   @default = "(PasteApp.exe path)" "%v"
+
+default is an attribute of key command and is of type REG_SZ. Set its value to "(PasteApp.exe path)" "%v". 
+PasteApp.exe path should point to installation folder of robocopyUI.
+%v is replaced with the path of directory where the user made a right-click.
