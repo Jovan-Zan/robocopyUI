@@ -48,12 +48,11 @@ int wmain(int argc, wchar_t** argv) {
 	// In case argv[1] ends with '"', that is root dir path ended with '\' which escaped '"'
 	if (targetDir[targetDir.length() - 1] == '"') 
 		targetDir = targetDir.substr(0, targetDir.length() - 1);
-	wcout << L"TargetDir = " << targetDir << endl;
 
 
 
 	// Get the handle to memory mapped file.
-	wcout << L"Openning file mapping..." << endl;
+	// Openning file mapping
 	HANDLE hMapFile = OpenFileMapping(
 		FILE_MAP_READ,         // read access
 		FALSE,                 // do not inherit the name
@@ -63,7 +62,7 @@ int wmain(int argc, wchar_t** argv) {
 		Sleep(5000);
 		return EXIT_FAILURE;
 	}
-	wcout << L"Creating a view of memory mapped file..." << endl;
+	// Creating a view of memory mapped file
 	LPWSTR pBuf = (LPWSTR)MapViewOfFile(hMapFile,   // handle to map object
 		FILE_MAP_READ, // read/write permission
 		0,
@@ -81,7 +80,7 @@ int wmain(int argc, wchar_t** argv) {
 	// Obtain contents of memory mapped file.
 	// Before reading from MMF we need to lock the MMF mutex
 	// Creates or opens the mutex.
-	wcout << L"Opening MMF mutex..." << endl;
+	// Opening MMF mutex
 	HANDLE hMMFMutex = CreateMutex(NULL, FALSE, MUTEXNAME_MMFMUTEX);
 	if (hMMFMutex == NULL) {
 		cerr << "Error: Failed to create or open MMF mutex." << endl;
@@ -89,11 +88,11 @@ int wmain(int argc, wchar_t** argv) {
 		return EXIT_FAILURE;
 	}
 	if (WaitForSingleObject(hMMFMutex, INFINITE) != WAIT_OBJECT_0) {
-		wcout << L"Failed to acquire MMF mutex." << endl;
+		cerr << "Failed to acquire MMF mutex." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
-	wcout << L"Getting contents of memory mapped file..." << endl;
-	wcout << pBuf;
+	// Getting contents of memory mapped file
 	wstringstream contents;
 	contents << pBuf;
 	ReleaseMutex(hMMFMutex); // Release MMF mutex
@@ -101,7 +100,7 @@ int wmain(int argc, wchar_t** argv) {
 	
 
 
-	wcout << "Parsing contents of memory mapped file..." << endl;
+	// Parsing contents of memory mapped file
 	wstring numInFirstLine;
 	getline(contents, numInFirstLine, L'\n');
 	int itemCount = stoi(numInFirstLine);
@@ -147,7 +146,7 @@ int wmain(int argc, wchar_t** argv) {
 
 
 
-	wcout << "FINISHED";
+	wcout << L"FINISHED" << endl;
 	_wsystem(L"pause");
 	return 0;
 }

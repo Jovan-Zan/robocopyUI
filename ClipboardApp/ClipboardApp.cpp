@@ -19,7 +19,7 @@ int wmain(int argc, wchar_t** argv) {
 
 
 	// Creates or opens the mutex.
-	wcout << L"Opening mutex..." << endl;
+	// Opening mutex
 	HANDLE hCBAMutex = CreateMutex(NULL, FALSE, MUTEXNAME_SINGLECLIPBOARDAPP);
 	if (hCBAMutex == NULL) {
 		cerr << "Error: Failed to create or open clipboardapp mutex." << endl;
@@ -30,23 +30,25 @@ int wmain(int argc, wchar_t** argv) {
 	// ClipboardApp.exe is already running.
 	DWORD dwTryAcquireMutex = WaitForSingleObject(hCBAMutex, 0);
 	if (dwTryAcquireMutex != WAIT_OBJECT_0) {
-		wcout << L"An instance of ClipboardApp is already running." << endl;
+		cerr << "Note: An instance of ClipboardApp is already running." << endl;
+		Sleep(5000);
 		return 0;
 	}
 
 
 
 	// Get the handle to memory mapped file in order to keep it alive and in memory.
-	wcout << L"Openning file mapping..." << endl;
+	// Openning file mapping
 	HANDLE hMapFile = OpenFileMapping(
 		FILE_MAP_READ,         // read access
 		FALSE,                 // do not inherit the name
 		mmfName);              // name of mapping object
 	if (hMapFile == NULL) {
 		cerr << "Error: Couldn't open file mapping." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
-	wcout << L"Aquired MMF handle" << endl;
+	// Aquired MMF handle
 
 
 
@@ -70,25 +72,7 @@ int wmain(int argc, wchar_t** argv) {
 		return EXIT_FAILURE;
 	}
 
-	/*
-	wcout << L"Creating a view of memory mapped file..." << endl;
-	LPWSTR pBuf = (LPWSTR) MapViewOfFile(hMapFile,   // handle to map object
-		FILE_MAP_READ, // read/write permission
-		0,
-		0,
-		MAXCONTENTSSIZE);
 
-	if (pBuf == NULL)
-	{
-		cerr << "Error: Couldn't open file map for reading." << endl;
-		return EXIT_FAILURE;
-	}
-
-	wcout << L"Getting contests of memory mapped file..." << endl;
-	wcout << pBuf;
-	*/
-
-	wcout << L"FINISHED" << endl;
 
 	Sleep(MAXRUNNINGTIME);
 

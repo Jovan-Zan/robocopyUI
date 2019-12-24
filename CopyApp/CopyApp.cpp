@@ -28,35 +28,23 @@ int wmain(int argc, wchar_t **argv) {
 		return EXIT_FAILURE;
 	}
 
-	wcout << L"Number of arguments = " << argc << endl;
-	wcout << "Arguments: " << endl;
-	for (int i = 0; i < argc; i++)
-		wcout << "argv[" << i << "] = " << argv[i] << endl;
-	wcout << endl;
 
-
+	// Parsing names of selected items
 	wstring rootDirPath; // Path of directory containing selected items.
 	vector<wstring> itemNames; //  Filenames of seleceted items.
-
 	rootDirPath = wstring(argv[1]);
 	rootDirPath = rootDirPath.substr(0, rootDirPath.find_last_of(L"\\"));
-	wcout << "Root dir path = " << rootDirPath << endl;
-
 	for (int i = 1; i < argc; i++)
 		itemNames.push_back(wstring(wcsrchr(argv[i], L'\\') + 1));
 
-	wcout << "Items: " << endl;
-	for (int i = 0; i < itemNames.size(); i++)
-		wcout << "itemNames[" << i << "] = " << itemNames[i] << endl;
 	
-	wcout << L"Creating contents string..." << endl;
+	// Creating contents string
 	// First line of contents is the number of selected items
 	// Second line contains path of the directory of selected items
 	int itemCount = argc - 1;
 	wstring contents = to_wstring(itemCount) + L"\n" + rootDirPath + L"\n"; 
 	for (vector<wstring>::const_iterator it = itemNames.begin(); it != itemNames.end(); it++)
 		contents += *it + L"\n";
-	wcout << L"Contents = " << endl << contents << endl << endl;;
 
 
 
@@ -88,14 +76,14 @@ int wmain(int argc, wchar_t **argv) {
 	ZeroMemory(&piCPA, sizeof(piCPA));
 
 	// Start ClipboardApp.exe
-	wcout << L"Starting ClipboardApp.exe ..." << endl;
+	// Starting ClipboardApp.exe
 	if (!CreateProcess(
 		L"ClipboardApp.exe", // Program name.
 		NULL, // Command line arguments (in this case uses L"ClipboardApp.exe")
 		NULL,              // Process handle not inheritable
 		NULL,              // Thread handle not inheritable
 		FALSE,             // Set handle inheritance to FALSE
-		CREATE_NEW_CONSOLE, //CREATE_NO_WINDOW,  // Creation flags.
+		CREATE_NO_WINDOW,  // CREATE_NEW_CONSOLE  // Creation flags.
 		NULL,              // Use parent's environment block
 		NULL,              // Use parent's starting directory 
 		&siCPA,            // Pointer to STARTUPINFO structure
@@ -111,7 +99,7 @@ int wmain(int argc, wchar_t **argv) {
 	HANDLE hMapFile;
 	LPWSTR pBuf;
 
-	wcout << L"Creating memory file mapping..." << endl;
+	// Creating memory file mapping
 	hMapFile = CreateFileMapping(
 		INVALID_HANDLE_VALUE,
 		NULL,
@@ -126,7 +114,7 @@ int wmain(int argc, wchar_t **argv) {
 		return EXIT_FAILURE;
 	}
 
-	wcout << L"Opening a view of memory mapped file..." << endl;
+	// Opening a view of memory mapped file
 	pBuf = (LPWSTR) MapViewOfFile(
 		hMapFile,
 		FILE_MAP_ALL_ACCESS,
@@ -142,7 +130,7 @@ int wmain(int argc, wchar_t **argv) {
 
 	// Before writing to MMF we need to lock the mutex
 	// Creates or opens the mutex.
-	wcout << L"Opening MMF mutex..." << endl;
+	// Opening MMF mutex
 	HANDLE hMMFMutex = CreateMutex(NULL, FALSE, MUTEXNAME_MMFMUTEX);
 	if (hMMFMutex == NULL) {
 		cerr << "Error: Failed to create or open MMF mutex." << endl;
@@ -150,24 +138,25 @@ int wmain(int argc, wchar_t **argv) {
 		return EXIT_FAILURE;
 	}
 	if (WaitForSingleObject(hMMFMutex, INFINITE) != WAIT_OBJECT_0) {
-		wcout << L"Failed to acquire MMF mutex." << endl;
+		cerr << "Failed to acquire MMF mutex." << endl;
 		return EXIT_FAILURE;
 	}
-	wcout << L"Copying contents to memory mapped file..." << endl;
+	// Copying contents to memory mapped file
 	CopyMemory(pBuf, contents.c_str(), contents.length() * sizeof(wchar_t));
-	wcout << L"Finished copying to memory mapped file." << endl << endl;
+	// Finished copying to memory mapped file
 	ReleaseMutex(hMMFMutex);
 	CloseHandle(hMMFMutex);
 
 
 	// Wait until ClipboardApp aquires a handle to MMF 
 	WaitForSingleObject(hAquiredMMFHandleEvent, INFINITE);
-	wcout << L"SIGNALED" << endl;
+	// Event signaled 
 	UnmapViewOfFile(pBuf);
 	CloseHandle(hMapFile);
 	CloseHandle(hAquiredMMFHandleEvent);
  	
-	wcout << L"THE END" << endl;
+	wcout << L"Robocopy Script Generated" << endl;
+	wcout << L"Window will autoclose in 5 seconds" << endl;
 	Sleep(5000);
 	return 0;
 }
