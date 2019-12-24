@@ -45,6 +45,9 @@ int wmain(int argc, wchar_t** argv) {
 	}
 	// Else...
 	wstring targetDir = wstring(argv[1]);
+	// In case argv[1] ends with '"', that is root dir path ended with '\' which escaped '"'
+	if (targetDir[targetDir.length() - 1] == '"') 
+		targetDir = targetDir.substr(0, targetDir.length() - 1);
 	wcout << L"TargetDir = " << targetDir << endl;
 
 
