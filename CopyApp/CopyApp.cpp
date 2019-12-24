@@ -18,11 +18,13 @@ using namespace std;
 int wmain(int argc, wchar_t **argv) {
 	if (_setmode(_fileno(stdout), _O_U16TEXT) == -1) {
 		cerr << "Error: Can't change stdout mode to unicode." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
 	
 	if (argc - 1 > MAXITEMCOUNT) {
 		cerr << "Error: Exceeded maximum number of selected files (" << MAXITEMCOUNT << ")" << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
 
@@ -54,8 +56,26 @@ int wmain(int argc, wchar_t **argv) {
 	wstring contents = to_wstring(itemCount) + L"\n" + rootDirPath + L"\n"; 
 	for (vector<wstring>::const_iterator it = itemNames.begin(); it != itemNames.end(); it++)
 		contents += *it + L"\n";
-
 	wcout << L"Contents = " << endl << contents << endl << endl;;
+
+
+
+	// Event which notifies CopyApp that the ClipboarApp has acquired a handle 
+	// to MMF (memory-mapped file). CopyApp cannot exit before this happens.
+	// If an instance of ClipboardApp is already running the event will
+	// already be in signaled state.
+	HANDLE hAquiredMMFHandleEvent = CreateEvent( // Create or open
+		NULL, // Default access flags
+		TRUE, // Manual reset = true
+		FALSE, // Initial state is nonsignaled
+		EVENTNAME_AQUIREMMFHANDLE); // Name of the event 
+
+	if (hAquiredMMFHandleEvent == NULL)
+	{
+		cerr << "Could not create or open MMF handle aquisition event" << endl;
+		Sleep(5000);
+		return EXIT_FAILURE;
+	}
 
 
 
@@ -81,11 +101,10 @@ int wmain(int argc, wchar_t **argv) {
 		&siCPA,            // Pointer to STARTUPINFO structure
 		&piCPA)) {          // Pointer to PROCESS_INFORMATION structure
 		cerr << "Error: Couldn't create ClipboardApp process." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
 	
-
-
 
 
 	// Populate memory mapped file.
@@ -103,6 +122,7 @@ int wmain(int argc, wchar_t **argv) {
 
 	if (hMapFile == NULL) {
 		cerr << "Error: Couldn't create file mapping." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
 
@@ -116,19 +136,38 @@ int wmain(int argc, wchar_t **argv) {
 
 	if (pBuf == NULL) {
 		cerr << "Error: Couldn't create file view pBuf." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
-	
+
+	// Before writing to MMF we need to lock the mutex
+	// Creates or opens the mutex.
+	wcout << L"Opening MMF mutex..." << endl;
+	HANDLE hMMFMutex = CreateMutex(NULL, FALSE, MUTEXNAME_MMFMUTEX);
+	if (hMMFMutex == NULL) {
+		cerr << "Error: Failed to create or open MMF mutex." << endl;
+		Sleep(5000);
+		return EXIT_FAILURE;
+	}
+	if (WaitForSingleObject(hMMFMutex, INFINITE) != WAIT_OBJECT_0) {
+		wcout << L"Failed to acquire MMF mutex." << endl;
+		return EXIT_FAILURE;
+	}
 	wcout << L"Copying contents to memory mapped file..." << endl;
 	CopyMemory(pBuf, contents.c_str(), contents.length() * sizeof(wchar_t));
 	wcout << L"Finished copying to memory mapped file." << endl << endl;
+	ReleaseMutex(hMMFMutex);
+	CloseHandle(hMMFMutex);
 
 
-
-	wcout << L"THE END" << endl;
-	Sleep(60000);
-
+	// Wait until ClipboardApp aquires a handle to MMF 
+	WaitForSingleObject(hAquiredMMFHandleEvent, INFINITE);
+	wcout << L"SIGNALED" << endl;
 	UnmapViewOfFile(pBuf);
 	CloseHandle(hMapFile);
- 	return 0;
+	CloseHandle(hAquiredMMFHandleEvent);
+ 	
+	wcout << L"THE END" << endl;
+	Sleep(5000);
+	return 0;
 }

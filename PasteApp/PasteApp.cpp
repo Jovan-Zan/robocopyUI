@@ -24,11 +24,13 @@ wstring qe(wstring str) {
 int wmain(int argc, wchar_t** argv) {
 	if (_setmode(_fileno(stdout), _O_U16TEXT) == -1) {
 		cerr << "Error: Can't change stdout mode to unicode." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
 
 	if (argc != 2) {
 		cerr << "Bad number of arguments (should be 2)" << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
 
@@ -38,11 +40,13 @@ int wmain(int argc, wchar_t** argv) {
 	DWORD dwTargetDirAtt = GetFileAttributes(argv[1]);
 	if (!(dwTargetDirAtt & FILE_ATTRIBUTE_DIRECTORY)) {
 		cerr << "Passed argument is not a valid directory path!" << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
 	// Else...
 	wstring targetDir = wstring(argv[1]);
 	wcout << L"TargetDir = " << targetDir << endl;
+
 
 
 	// Get the handle to memory mapped file.
@@ -51,33 +55,49 @@ int wmain(int argc, wchar_t** argv) {
 		FILE_MAP_READ,         // read access
 		FALSE,                 // do not inherit the name
 		mmfName);              // name of mapping object
-
 	if (hMapFile == NULL) {
 		cerr << "Error: Couldn't open file mapping." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
-
 	wcout << L"Creating a view of memory mapped file..." << endl;
 	LPWSTR pBuf = (LPWSTR)MapViewOfFile(hMapFile,   // handle to map object
 		FILE_MAP_READ, // read/write permission
 		0,
 		0,
 		MAXCONTENTSSIZE);
-
 	if (pBuf == NULL)
 	{
 		cerr << "Error: Couldn't open view for reading." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
 
 
-	// Obtain contents of memory mapped file.
 
+	// Obtain contents of memory mapped file.
+	// Before reading from MMF we need to lock the MMF mutex
+	// Creates or opens the mutex.
+	wcout << L"Opening MMF mutex..." << endl;
+	HANDLE hMMFMutex = CreateMutex(NULL, FALSE, MUTEXNAME_MMFMUTEX);
+	if (hMMFMutex == NULL) {
+		cerr << "Error: Failed to create or open MMF mutex." << endl;
+		Sleep(5000);
+		return EXIT_FAILURE;
+	}
+	if (WaitForSingleObject(hMMFMutex, INFINITE) != WAIT_OBJECT_0) {
+		wcout << L"Failed to acquire MMF mutex." << endl;
+		return EXIT_FAILURE;
+	}
 	wcout << L"Getting contents of memory mapped file..." << endl;
 	wcout << pBuf;
 	wstringstream contents;
 	contents << pBuf;
+	ReleaseMutex(hMMFMutex); // Release MMF mutex
+	CloseHandle(hMMFMutex);
 	
+
+
 	wcout << "Parsing contents of memory mapped file..." << endl;
 	wstring numInFirstLine;
 	getline(contents, numInFirstLine, L'\n');
@@ -111,7 +131,6 @@ int wmain(int argc, wchar_t** argv) {
 		wstring comm = L"robocopy.exe " + qe(rootDir) + L" " + qe(targetDir) + L" " + selectedFiles + L"\n";
 		_wsystem(comm.c_str());
 	}
-
 	// Copy selected directories.
 	wcout << L"Copying selected directories...";
 	for (int i = 0; i < selectedDirs.size(); i++) {

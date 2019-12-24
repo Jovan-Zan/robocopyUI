@@ -12,21 +12,23 @@ wchar_t contents[MAXCONTENTSSIZE + 1];
 int wmain(int argc, wchar_t** argv) {
 	if (_setmode(_fileno(stdout), _O_U16TEXT) == -1) {
 		cerr << "Error: Can't change stdout mode to unicode." << endl;
+		Sleep(5000);
 		return EXIT_FAILURE;
 	}
 
-	// Create or open mutex.
+
+
+	// Creates or opens the mutex.
 	wcout << L"Opening mutex..." << endl;
-	HANDLE hCPAMutex = CreateMutex(NULL, FALSE, MUTEXNAME);
-	if (hCPAMutex == NULL) {
+	HANDLE hCBAMutex = CreateMutex(NULL, FALSE, MUTEXNAME_SINGLECLIPBOARDAPP);
+	if (hCBAMutex == NULL) {
 		cerr << "Error: Failed to create or open clipboardapp mutex." << endl;
 		Sleep(3000);
 		return EXIT_FAILURE;
 	}
-
 	// If mutex is already acquired that means an instance of
 	// ClipboardApp.exe is already running.
-	DWORD dwTryAcquireMutex = WaitForSingleObject(hCPAMutex, 0);
+	DWORD dwTryAcquireMutex = WaitForSingleObject(hCBAMutex, 0);
 	if (dwTryAcquireMutex != WAIT_OBJECT_0) {
 		wcout << L"An instance of ClipboardApp is already running." << endl;
 		return 0;
@@ -40,12 +42,35 @@ int wmain(int argc, wchar_t** argv) {
 		FILE_MAP_READ,         // read access
 		FALSE,                 // do not inherit the name
 		mmfName);              // name of mapping object
-
 	if (hMapFile == NULL) {
 		cerr << "Error: Couldn't open file mapping." << endl;
 		return EXIT_FAILURE;
 	}
+	wcout << L"Aquired MMF handle" << endl;
 
+
+
+	HANDLE hAquiredMMFHandleEvent = OpenEvent(
+		SYNCHRONIZE | EVENT_MODIFY_STATE, // Access rights
+		FALSE, // No inheritance
+		EVENTNAME_AQUIREMMFHANDLE); // Event name
+	if (hAquiredMMFHandleEvent == NULL)
+	{
+		cerr << "Failed to open MMF handle aqusition event" << endl << "Error code = " << GetLastError() << endl;
+		Sleep(5000);
+		return EXIT_FAILURE;
+	}
+
+	// Signal the event which will enable CopyApp to finish.
+	if (SetEvent(hAquiredMMFHandleEvent) == FALSE)
+	{
+		cerr << "Failed to signal MMF handle aquistion event object" << endl 
+			<< "Error code = " << GetLastError() << endl;
+		Sleep(5000);
+		return EXIT_FAILURE;
+	}
+
+	/*
 	wcout << L"Creating a view of memory mapped file..." << endl;
 	LPWSTR pBuf = (LPWSTR) MapViewOfFile(hMapFile,   // handle to map object
 		FILE_MAP_READ, // read/write permission
@@ -61,13 +86,15 @@ int wmain(int argc, wchar_t** argv) {
 
 	wcout << L"Getting contests of memory mapped file..." << endl;
 	wcout << pBuf;
+	*/
 
-	wcout << "FINISHED" << endl;
+	wcout << L"FINISHED" << endl;
 
 	Sleep(MAXRUNNINGTIME);
 
 	CloseHandle(hMapFile);
-	ReleaseMutex(hCPAMutex);
-	CloseHandle(hCPAMutex);
+	ReleaseMutex(hCBAMutex);
+	CloseHandle(hCBAMutex);
+	CloseHandle(hAquiredMMFHandleEvent);
 	return 0;
 }
